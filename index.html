@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fandom Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<header class="top-bar">
+  <span id="userEmail">Not logged in</span>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginScreen" class="login-screen">
+  <h2>Login</h2>
+  <input type="email" id="emailInput" placeholder="Email">
+  <input type="password" id="passwordInput" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <p class="hint">Moderator accounts are predefined</p>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div id="app" class="app hidden">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <button id="newChatBtn">+ New Chat</button>
+    <ul id="chatList"></ul>
+
+    <button id="openModeratorBtn" class="mod-btn hidden">
+      Moderator Panel
+    </button>
+  </aside>
+
+  <!-- ===== CHAT AREA ===== -->
+  <main class="chat-area">
+    <div id="chatWindow" class="chat-window"></div>
+
+    <div class="input-area">
+      <button id="micBtn">🎤</button>
+      <input id="messageInput" placeholder="Ask about the fandom...">
+      <button id="sendBtn">Send</button>
+    </div>
+  </main>
+
+</div>
+
+<!-- ================= MODERATOR PANEL ================= -->
+<div id="moderatorPanel" class="moderator-panel hidden">
+  <h2>Moderator Dashboard</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Sessions</th>
+        <th>Last Active</th>
+      </tr>
+    </thead>
+    <tbody id="modTable"></tbody>
+  </table>
+  <button id="closeModPanel">Close</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
