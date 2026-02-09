@@ -1,0 +1,133 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+/* ===== TOP BAR ===== */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 15px;
+  background: #020617;
+}
+
+/* ===== LOGIN ===== */
+.login-screen {
+  max-width: 320px;
+  margin: 100px auto;
+  padding: 20px;
+  background: #020617;
+  border-radius: 8px;
+}
+
+.login-screen input,
+.login-screen button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+/* ===== APP LAYOUT ===== */
+.app {
+  display: flex;
+  height: calc(100vh - 50px);
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px;
+  background: #020617;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar button {
+  margin-bottom: 10px;
+}
+
+#chatList {
+  list-style: none;
+  padding: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+#chatList li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#chatList li.active {
+  background: #1e293b;
+}
+
+/* ===== CHAT AREA ===== */
+.chat-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-window {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 12px;
+}
+
+.user {
+  text-align: right;
+  color: #38bdf8;
+}
+
+.bot {
+  text-align: left;
+  color: #a7f3d0;
+}
+
+/* ===== INPUT ===== */
+.input-area {
+  display: flex;
+  padding: 10px;
+  background: #020617;
+}
+
+.input-area input {
+  flex-grow: 1;
+  padding: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ===== MODERATOR PANEL ===== */
+.moderator-panel {
+  position: fixed;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  background: #020617;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border-bottom: 1px solid #334155;
+  padding: 8px;
+}
