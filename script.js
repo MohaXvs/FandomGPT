@@ -1,34 +1,105 @@
 /*************************************************
- MOCK DATABASE & USERS
+ CONFIG
 **************************************************/
-const MODERATORS = ["mod@fandom.com"];
+const MODERATORS = ["mohammadcavusoglu@gmail.com"];
+
+/*************************************************
+ GLOBAL STATE
+**************************************************/
 let currentUser = null;
 let currentChatId = null;
 
 /*************************************************
+ UTIL STORAGE HELPERS
+**************************************************/
+function getUsers() {
+  return JSON.parse(localStorage.getItem("users")) || [];
+}
+
+function saveUsers(users) {
+  localStorage.setItem("users", JSON.stringify(users));
+}
+
+function getBannedUsers() {
+  return JSON.parse(localStorage.getItem("bannedUsers")) || [];
+}
+
+function saveBannedUsers(list) {
+  localStorage.setItem("bannedUsers", JSON.stringify(list));
+}
+
+function getTempKeys() {
+  return JSON.parse(localStorage.getItem("tempKeys")) || [];
+}
+
+function saveTempKeys(keys) {
+  localStorage.setItem("tempKeys", JSON.stringify(keys));
+}
+
+/*************************************************
  LOGIN LOGIC
 **************************************************/
-document.getElementById("loginBtn").onclick = () => {
-  const email = emailInput.value;
+loginBtn.onclick = () => {
+  const email = emailInput.value.trim();
   if (!email) return alert("Enter email");
 
-  currentUser = {
-    email,
-    id: "user_" + Date.now(),
-    isMod: MODERATORS.includes(email),
-    chats: []
-  };
+  // Ban check
+  if (getBannedUsers().includes(email)) {
+    return alert("You are banned.");
+  }
 
-  localStorage.setItem("currentUser", JSON.stringify(currentUser));
+  // Temp key check (optional)
+  const key = passwordInput.value.trim();
+  if (key) {
+    const keys = getTempKeys();
+    const validKey = keys.find(k => k.key === key && !k.used);
+    if (!validKey) return alert("Invalid key");
+    validKey.used = true;
+    saveTempKeys(keys);
+  }
+
+  let users = getUsers();
+  let user = users.find(u => u.email === email);
+
+  if (!user) {
+    user = {
+      email,
+      chats: [],
+      lastActive: Date.now(),
+      isOnline: true
+    };
+    users.push(user);
+  }
+
+  user.isOnline = true;
+  user.lastActive = Date.now();
+  saveUsers(users);
+
+  currentUser = user;
+  localStorage.setItem("currentUser", email);
+
   userEmail.textContent = email;
   loginScreen.classList.add("hidden");
   app.classList.remove("hidden");
 
-  if (currentUser.isMod) {
+  if (MODERATORS.includes(email)) {
     openModeratorBtn.classList.remove("hidden");
   }
 
   loadChats();
+};
+
+/*************************************************
+ LOGOUT
+**************************************************/
+logoutBtn.onclick = () => {
+  if (!currentUser) return;
+  let users = getUsers();
+  const u = users.find(u => u.email === currentUser.email);
+  if (u) u.isOnline = false;
+  saveUsers(users);
+  localStorage.removeItem("currentUser");
+  location.reload();
 };
 
 /*************************************************
@@ -38,7 +109,7 @@ newChatBtn.onclick = () => {
   const chatId = "chat_" + Date.now();
   currentUser.chats.push({ id: chatId, messages: [] });
   currentChatId = chatId;
-  saveUser();
+  updateUser();
   loadChats();
 };
 
@@ -56,7 +127,7 @@ function openChat(id) {
   currentChatId = id;
   chatWindow.innerHTML = "";
   const chat = currentUser.chats.find(c => c.id === id);
-  chat.messages.forEach(m => addMessage(m.text, m.sender));
+  chat.messages.forEach(m => addMessage(m.text, m.sender, false));
 }
 
 /*************************************************
@@ -65,47 +136,60 @@ function openChat(id) {
 sendBtn.onclick = sendMessage;
 
 function sendMessage() {
-  const text = messageInput.value;
-  if (!text) return;
+  const text = messageInput.value.trim();
+  if (!text || !currentChatId) return;
 
-  addMessage(text, "user");
-  getBotResponse(text);
+  addMessage(text, "user", true);
   messageInput.value = "";
+  getBotResponse(text);
 }
 
-function addMessage(text, sender) {
+function addMessage(text, sender, save) {
   const div = document.createElement("div");
   div.className = `message ${sender}`;
   div.textContent = text;
   chatWindow.appendChild(div);
 
-  const chat = currentUser.chats.find(c => c.id === currentChatId);
-  chat.messages.push({ text, sender });
-  saveUser();
+  if (save) {
+    const chat = currentUser.chats.find(c => c.id === currentChatId);
+    chat.messages.push({ text, sender });
+    updateUser();
+  }
 }
 
 /*************************************************
- FANDOM WIKI MOCK API
+ MOCK FANDOM BOT
 **************************************************/
 function getBotResponse(query) {
-  // Placeholder fandom logic
-  const response =
-    "According to the fandom wiki, \"" +
-    query +
-    "\" relates to a known concept. (Mock summary from wiki)";
-
-  setTimeout(() => addMessage(response, "bot"), 500);
+  setTimeout(() => {
+    addMessage(
+      `According to the fandom wiki, "${query}" is a documented topic. (Mock response)`,
+      "bot",
+      true
+    );
+  }, 600);
 }
 
 /*************************************************
  SPEECH TO TEXT
 **************************************************/
 if ("webkitSpeechRecognition" in window) {
-  const recognition = new webkitSpeechRecognition();
-  recognition.onresult = e => {
+  const rec = new webkitSpeechRecognition();
+  rec.onresult = e => {
     messageInput.value = e.results[0][0].transcript;
   };
-  micBtn.onclick = () => recognition.start();
+  micBtn.onclick = () => rec.start();
+}
+
+/*************************************************
+ USER SAVE
+**************************************************/
+function updateUser() {
+  let users = getUsers();
+  const i = users.findIndex(u => u.email === currentUser.email);
+  currentUser.lastActive = Date.now();
+  users[i] = currentUser;
+  saveUsers(users);
 }
 
 /*************************************************
@@ -113,31 +197,57 @@ if ("webkitSpeechRecognition" in window) {
 **************************************************/
 openModeratorBtn.onclick = () => {
   moderatorPanel.classList.remove("hidden");
-  modTable.innerHTML = "";
-
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  users.forEach(u => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${u.email}</td>
-      <td>${u.chats.length}</td>
-      <td>${new Date().toLocaleTimeString()}</td>
-    `;
-    modTable.appendChild(row);
-  });
+  renderModeratorTable();
 };
 
-closeModPanel.onclick = () =>
+closeModPanel.onclick = () => {
   moderatorPanel.classList.add("hidden");
+};
+
+function renderModeratorTable() {
+  modTable.innerHTML = "";
+  getUsers().forEach(u => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.email}</td>
+      <td>${u.chats.length}</td>
+      <td>${u.isOnline ? "Online" : "Offline"}</td>
+      <td>
+        <button onclick="kickUser('${u.email}')">Kick</button>
+        <button onclick="banUser('${u.email}')">Ban</button>
+      </td>
+    `;
+    modTable.appendChild(tr);
+  });
+}
 
 /*************************************************
- STORAGE
+ MOD ACTIONS
 **************************************************/
-function saveUser() {
-  localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  const idx = users.findIndex(u => u.email === currentUser.email);
-  if (idx >= 0) users[idx] = currentUser;
-  else users.push(currentUser);
-  localStorage.setItem("users", JSON.stringify(users));
+function kickUser(email) {
+  let users = getUsers();
+  const u = users.find(x => x.email === email);
+  if (u) u.isOnline = false;
+  saveUsers(users);
+  alert(email + " kicked");
+  renderModeratorTable();
+}
+
+function banUser(email) {
+  let banned = getBannedUsers();
+  if (!banned.includes(email)) banned.push(email);
+  saveBannedUsers(banned);
+  kickUser(email);
+  alert(email + " banned");
+}
+
+/*************************************************
+ TEMP KEY GENERATOR
+**************************************************/
+function generateTempKey() {
+  const key = Math.random().toString(36).substring(2, 10);
+  const keys = getTempKeys();
+  keys.push({ key, used: false, created: Date.now() });
+  saveTempKeys(keys);
+  alert("Temp key: " + key);
 }
