@@ -22,7 +22,6 @@ body {
   height: calc(100vh - 60px);
 }
 
-/* ===== SIDEBAR ===== */
 .sidebar {
   width: 250px;
   background: #020617;
@@ -48,11 +47,6 @@ body {
   cursor: pointer;
 }
 
-#chatList li.active {
-  background: #1e293b;
-}
-
-/* ===== CHAT AREA ===== */
 .chat-area {
   flex: 1;
   display: flex;
