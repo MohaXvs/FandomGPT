@@ -1,121 +1,62 @@
 /*************************************************
- CONFIG
+ GLOBAL CONFIG
 **************************************************/
-const MODERATORS = ["mohammadcavusoglu@gmail.com"];
+
+// Currently selected fandom
+let currentFandom = "naruto";
 
 /*************************************************
- GLOBAL STATE
+ CHAT STATE MANAGEMENT
 **************************************************/
-let currentUser = null;
+
+let chats = JSON.parse(localStorage.getItem("chats")) || [];
 let currentChatId = null;
 
 /*************************************************
- UTIL STORAGE HELPERS
+ DOM REFERENCES
 **************************************************/
-function getUsers() {
-  return JSON.parse(localStorage.getItem("users")) || [];
-}
 
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-function getBannedUsers() {
-  return JSON.parse(localStorage.getItem("bannedUsers")) || [];
-}
-
-function saveBannedUsers(list) {
-  localStorage.setItem("bannedUsers", JSON.stringify(list));
-}
-
-function getTempKeys() {
-  return JSON.parse(localStorage.getItem("tempKeys")) || [];
-}
-
-function saveTempKeys(keys) {
-  localStorage.setItem("tempKeys", JSON.stringify(keys));
-}
+const chatList = document.getElementById("chatList");
+const chatWindow = document.getElementById("chatWindow");
+const messageInput = document.getElementById("messageInput");
+const fandomSelect = document.getElementById("fandomSelect");
 
 /*************************************************
- LOGIN LOGIC
+ FANDOM SWITCHING
 **************************************************/
-loginBtn.onclick = () => {
-  const email = emailInput.value.trim();
-  if (!email) return alert("Enter email");
 
-  // Ban check
-  if (getBannedUsers().includes(email)) {
-    return alert("You are banned.");
-  }
+fandomSelect.addEventListener("change", () => {
+  currentFandom = fandomSelect.value;
+});
 
-  // Temp key check (optional)
-  const key = passwordInput.value.trim();
-  if (key) {
-    const keys = getTempKeys();
-    const validKey = keys.find(k => k.key === key && !k.used);
-    if (!validKey) return alert("Invalid key");
-    validKey.used = true;
-    saveTempKeys(keys);
-  }
+/*************************************************
+ CREATE NEW CHAT SESSION
+**************************************************/
 
-  let users = getUsers();
-  let user = users.find(u => u.email === email);
-
-  if (!user) {
-    user = {
-      email,
-      chats: [],
-      lastActive: Date.now(),
-      isOnline: true
-    };
-    users.push(user);
-  }
-
-  user.isOnline = true;
-  user.lastActive = Date.now();
-  saveUsers(users);
-
-  currentUser = user;
-  localStorage.setItem("currentUser", email);
-
-  userEmail.textContent = email;
-  loginScreen.classList.add("hidden");
-  app.classList.remove("hidden");
-
-  if (MODERATORS.includes(email)) {
-    openModeratorBtn.classList.remove("hidden");
-  }
-
-  loadChats();
+document.getElementById("newChatBtn").onclick = () => {
+  const id = "chat_" + Date.now();
+  chats.push({ id, messages: [] });
+  currentChatId = id;
+  saveChats();
+  renderChats();
+  openChat(id);
 };
 
 /*************************************************
- LOGOUT
+ SAVE CHATS TO LOCAL STORAGE
 **************************************************/
-logoutBtn.onclick = () => {
-  if (!currentUser) return;
-  let users = getUsers();
-  const u = users.find(u => u.email === currentUser.email);
-  if (u) u.isOnline = false;
-  saveUsers(users);
-  localStorage.removeItem("currentUser");
-  location.reload();
-};
+
+function saveChats() {
+  localStorage.setItem("chats", JSON.stringify(chats));
+}
 
 /*************************************************
- CHAT MANAGEMENT
+ RENDER CHAT LIST
 **************************************************/
-newChatBtn.onclick = () => {
-  const chatId = "chat_" + Date.now();
-  currentUser.chats.push({ id: chatId, messages: [] });
-  currentChatId = chatId;
-  updateUser();
-  loadChats();
-};
 
-function loadChats() {
+function renderChats() {
   chatList.innerHTML = "";
-  currentUser.chats.forEach(chat => {
+  chats.forEach(chat => {
     const li = document.createElement("li");
     li.textContent = chat.messages[0]?.text || "New Chat";
     li.onclick = () => openChat(chat.id);
@@ -123,131 +64,105 @@ function loadChats() {
   });
 }
 
+/*************************************************
+ OPEN A CHAT SESSION
+**************************************************/
+
 function openChat(id) {
   currentChatId = id;
   chatWindow.innerHTML = "";
-  const chat = currentUser.chats.find(c => c.id === id);
+  const chat = chats.find(c => c.id === id);
   chat.messages.forEach(m => addMessage(m.text, m.sender, false));
 }
 
 /*************************************************
- MESSAGE HANDLING
+ ADD MESSAGE TO UI + SAVE
 **************************************************/
-sendBtn.onclick = sendMessage;
+
+function addMessage(text, sender, save = true) {
+  const div = document.createElement("div");
+  div.className = "message " + sender;
+  div.textContent = text;
+  chatWindow.appendChild(div);
+
+  if (save) {
+    const chat = chats.find(c => c.id === currentChatId);
+    chat.messages.push({ text, sender });
+    saveChats();
+  }
+
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+/*************************************************
+ HANDLE USER MESSAGE
+**************************************************/
+
+document.getElementById("sendBtn").onclick = sendMessage;
 
 function sendMessage() {
   const text = messageInput.value.trim();
   if (!text || !currentChatId) return;
 
-  addMessage(text, "user", true);
+  addMessage(text, "user");
   messageInput.value = "";
-  getBotResponse(text);
+  fetchFandomData(text);
 }
 
-function addMessage(text, sender, save) {
-  const div = document.createElement("div");
-  div.className = `message ${sender}`;
-  div.textContent = text;
-  chatWindow.appendChild(div);
+/*************************************************
+ CORE: FETCH DATA FROM FANDOM API
+**************************************************/
 
-  if (save) {
-    const chat = currentUser.chats.find(c => c.id === currentChatId);
-    chat.messages.push({ text, sender });
-    updateUser();
+async function fetchFandomData(query) {
+
+  addMessage("Searching wiki...", "bot");
+
+  try {
+    // Step 1: Search for matching page
+    const searchRes = await fetch(
+      `https://${currentFandom}.fandom.com/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`
+    );
+
+    const searchData = await searchRes.json();
+
+    if (!searchData.query.search.length) {
+      addMessage("No results found.", "bot");
+      return;
+    }
+
+    const title = searchData.query.search[0].title;
+
+    // Step 2: Get summary extract
+    const pageRes = await fetch(
+      `https://${currentFandom}.fandom.com/api.php?action=query&prop=extracts&exintro=true&explaintext=true&titles=${encodeURIComponent(title)}&format=json&origin=*`
+    );
+
+    const pageData = await pageRes.json();
+    const page = Object.values(pageData.query.pages)[0];
+
+    if (!page.extract) {
+      addMessage("Page found but no summary available.", "bot");
+      return;
+    }
+
+    const summary = page.extract.substring(0, 1000);
+
+    addMessage(`📖 ${title}\n\n${summary}\n\n(Source: ${currentFandom}.fandom.com)`, "bot");
+
+  } catch (err) {
+    console.error(err);
+    addMessage("Error contacting Fandom API.", "bot");
   }
 }
 
 /*************************************************
- MOCK FANDOM BOT
+ SPEECH TO TEXT (BROWSER BASED)
 **************************************************/
-function getBotResponse(query) {
-  setTimeout(() => {
-    addMessage(
-      `According to the fandom wiki, "${query}" is a documented topic. (Mock response)`,
-      "bot",
-      true
-    );
-  }, 600);
-}
 
-/*************************************************
- SPEECH TO TEXT
-**************************************************/
 if ("webkitSpeechRecognition" in window) {
-  const rec = new webkitSpeechRecognition();
-  rec.onresult = e => {
+  const recognition = new webkitSpeechRecognition();
+  recognition.onresult = e => {
     messageInput.value = e.results[0][0].transcript;
   };
-  micBtn.onclick = () => rec.start();
-}
-
-/*************************************************
- USER SAVE
-**************************************************/
-function updateUser() {
-  let users = getUsers();
-  const i = users.findIndex(u => u.email === currentUser.email);
-  currentUser.lastActive = Date.now();
-  users[i] = currentUser;
-  saveUsers(users);
-}
-
-/*************************************************
- MODERATOR PANEL
-**************************************************/
-openModeratorBtn.onclick = () => {
-  moderatorPanel.classList.remove("hidden");
-  renderModeratorTable();
-};
-
-closeModPanel.onclick = () => {
-  moderatorPanel.classList.add("hidden");
-};
-
-function renderModeratorTable() {
-  modTable.innerHTML = "";
-  getUsers().forEach(u => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${u.email}</td>
-      <td>${u.chats.length}</td>
-      <td>${u.isOnline ? "Online" : "Offline"}</td>
-      <td>
-        <button onclick="kickUser('${u.email}')">Kick</button>
-        <button onclick="banUser('${u.email}')">Ban</button>
-      </td>
-    `;
-    modTable.appendChild(tr);
-  });
-}
-
-/*************************************************
- MOD ACTIONS
-**************************************************/
-function kickUser(email) {
-  let users = getUsers();
-  const u = users.find(x => x.email === email);
-  if (u) u.isOnline = false;
-  saveUsers(users);
-  alert(email + " kicked");
-  renderModeratorTable();
-}
-
-function banUser(email) {
-  let banned = getBannedUsers();
-  if (!banned.includes(email)) banned.push(email);
-  saveBannedUsers(banned);
-  kickUser(email);
-  alert(email + " banned");
-}
-
-/*************************************************
- TEMP KEY GENERATOR
-**************************************************/
-function generateTempKey() {
-  const key = Math.random().toString(36).substring(2, 10);
-  const keys = getTempKeys();
-  keys.push({ key, used: false, created: Date.now() });
-  saveTempKeys(keys);
-  alert("Temp key: " + key);
+  document.getElementById("micBtn").onclick = () => recognition.start();
 }
