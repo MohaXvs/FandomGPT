@@ -1,20 +1,14 @@
 /*************************************************
- GLOBAL CONFIG
-**************************************************/
-
-// Currently selected fandom
-let currentFandom = "naruto";
-
-/*************************************************
- CHAT STATE MANAGEMENT
-**************************************************/
+ CHAT STATE
+*************************************************/
 
 let chats = JSON.parse(localStorage.getItem("chats")) || [];
 let currentChatId = null;
+let currentFandom = "terraria";
 
 /*************************************************
  DOM REFERENCES
-**************************************************/
+*************************************************/
 
 const chatList = document.getElementById("chatList");
 const chatWindow = document.getElementById("chatWindow");
@@ -23,15 +17,15 @@ const fandomSelect = document.getElementById("fandomSelect");
 
 /*************************************************
  FANDOM SWITCHING
-**************************************************/
+*************************************************/
 
 fandomSelect.addEventListener("change", () => {
   currentFandom = fandomSelect.value;
 });
 
 /*************************************************
- CREATE NEW CHAT SESSION
-**************************************************/
+ NEW CHAT
+*************************************************/
 
 document.getElementById("newChatBtn").onclick = () => {
   const id = "chat_" + Date.now();
@@ -43,8 +37,8 @@ document.getElementById("newChatBtn").onclick = () => {
 };
 
 /*************************************************
- SAVE CHATS TO LOCAL STORAGE
-**************************************************/
+ SAVE CHATS
+*************************************************/
 
 function saveChats() {
   localStorage.setItem("chats", JSON.stringify(chats));
@@ -52,7 +46,7 @@ function saveChats() {
 
 /*************************************************
  RENDER CHAT LIST
-**************************************************/
+*************************************************/
 
 function renderChats() {
   chatList.innerHTML = "";
@@ -65,8 +59,8 @@ function renderChats() {
 }
 
 /*************************************************
- OPEN A CHAT SESSION
-**************************************************/
+ OPEN CHAT
+*************************************************/
 
 function openChat(id) {
   currentChatId = id;
@@ -76,8 +70,8 @@ function openChat(id) {
 }
 
 /*************************************************
- ADD MESSAGE TO UI + SAVE
-**************************************************/
+ ADD MESSAGE
+*************************************************/
 
 function addMessage(text, sender, save = true) {
   const div = document.createElement("div");
@@ -95,8 +89,8 @@ function addMessage(text, sender, save = true) {
 }
 
 /*************************************************
- HANDLE USER MESSAGE
-**************************************************/
+ SEND MESSAGE
+*************************************************/
 
 document.getElementById("sendBtn").onclick = sendMessage;
 
@@ -110,15 +104,14 @@ function sendMessage() {
 }
 
 /*************************************************
- CORE: FETCH DATA FROM FANDOM API
-**************************************************/
+ FANDOM API FETCH
+*************************************************/
 
 async function fetchFandomData(query) {
 
   addMessage("Searching wiki...", "bot");
 
   try {
-    // Step 1: Search for matching page
     const searchRes = await fetch(
       `https://${currentFandom}.fandom.com/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`
     );
@@ -132,7 +125,6 @@ async function fetchFandomData(query) {
 
     const title = searchData.query.search[0].title;
 
-    // Step 2: Get summary extract
     const pageRes = await fetch(
       `https://${currentFandom}.fandom.com/api.php?action=query&prop=extracts&exintro=true&explaintext=true&titles=${encodeURIComponent(title)}&format=json&origin=*`
     );
@@ -147,7 +139,15 @@ async function fetchFandomData(query) {
 
     const summary = page.extract.substring(0, 1000);
 
-    addMessage(`📖 ${title}\n\n${summary}\n\n(Source: ${currentFandom}.fandom.com)`, "bot");
+    addMessage(
+`📖 ${title}
+
+${summary}
+
+🔎 Source:
+https://${currentFandom}.fandom.com/wiki/${title.replace(/ /g, "_")}`,
+      "bot"
+    );
 
   } catch (err) {
     console.error(err);
@@ -156,8 +156,8 @@ async function fetchFandomData(query) {
 }
 
 /*************************************************
- SPEECH TO TEXT (BROWSER BASED)
-**************************************************/
+ SPEECH TO TEXT
+*************************************************/
 
 if ("webkitSpeechRecognition" in window) {
   const recognition = new webkitSpeechRecognition();
@@ -166,3 +166,9 @@ if ("webkitSpeechRecognition" in window) {
   };
   document.getElementById("micBtn").onclick = () => recognition.start();
 }
+
+/*************************************************
+ INITIAL RENDER
+*************************************************/
+
+renderChats();
