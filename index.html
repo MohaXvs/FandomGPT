@@ -8,36 +8,34 @@
 </head>
 <body>
 
-<!-- ===== TOP BAR ===== -->
 <header class="top-bar">
   <h2>Fandom AI</h2>
 
-  <!-- FANDOM SELECTOR -->
+  <!-- Fandom Selector -->
   <select id="fandomSelect">
-    <option value="naruto">Naruto</option>
-    <option value="marvel">Marvel</option>
-    <option value="onepiece">One Piece</option>
-    <option value="genshin-impact">Genshin Impact</option>
-    <option value="starwars">Star Wars</option>
+    <option value="terraria">Terraria (Calamity & Mods)</option>
+    <option value="psbattles">Power Scaling Wiki</option>
+    <option value="warframe">Warframe</option>
+    <option value="minecraft">Minecraft</option>
+    <option value="leagueoflegends">League of Legends</option>
   </select>
 </header>
 
 <div class="app">
 
-  <!-- ===== SIDEBAR (CHAT SESSIONS) ===== -->
+  <!-- Sidebar -->
   <aside class="sidebar">
     <button id="newChatBtn">+ New Chat</button>
     <ul id="chatList"></ul>
   </aside>
 
-  <!-- ===== MAIN CHAT WINDOW ===== -->
+  <!-- Chat Area -->
   <main class="chat-area">
     <div id="chatWindow" class="chat-window"></div>
 
-    <!-- INPUT SECTION -->
     <div class="input-area">
       <button id="micBtn">🎤</button>
-      <input id="messageInput" placeholder="Ask about the fandom...">
+      <input id="messageInput" placeholder="Ask about the selected fandom...">
       <button id="sendBtn">Send</button>
     </div>
   </main>
