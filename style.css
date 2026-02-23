@@ -6,37 +6,20 @@
 body {
   margin: 0;
   background: #0f172a;
-  color: #e5e7eb;
+  color: white;
 }
 
-/* ===== TOP BAR ===== */
 .top-bar {
+  padding: 10px 20px;
+  background: #020617;
   display: flex;
   justify-content: space-between;
-  padding: 10px 15px;
-  background: #020617;
+  align-items: center;
 }
 
-/* ===== LOGIN ===== */
-.login-screen {
-  max-width: 320px;
-  margin: 100px auto;
-  padding: 20px;
-  background: #020617;
-  border-radius: 8px;
-}
-
-.login-screen input,
-.login-screen button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-}
-
-/* ===== APP LAYOUT ===== */
 .app {
   display: flex;
-  height: calc(100vh - 50px);
+  height: calc(100vh - 60px);
 }
 
 /* ===== SIDEBAR ===== */
@@ -49,13 +32,14 @@ body {
 }
 
 .sidebar button {
+  padding: 8px;
   margin-bottom: 10px;
+  cursor: pointer;
 }
 
 #chatList {
   list-style: none;
   padding: 0;
-  flex-grow: 1;
   overflow-y: auto;
 }
 
@@ -70,19 +54,20 @@ body {
 
 /* ===== CHAT AREA ===== */
 .chat-area {
-  flex-grow: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 
 .chat-window {
-  flex-grow: 1;
+  flex: 1;
   padding: 15px;
   overflow-y: auto;
 }
 
 .message {
   margin-bottom: 12px;
+  white-space: pre-line;
 }
 
 .user {
@@ -95,7 +80,6 @@ body {
   color: #a7f3d0;
 }
 
-/* ===== INPUT ===== */
 .input-area {
   display: flex;
   padding: 10px;
@@ -103,31 +87,6 @@ body {
 }
 
 .input-area input {
-  flex-grow: 1;
-  padding: 10px;
-}
-
-.hidden {
-  display: none;
-}
-
-/* ===== MODERATOR PANEL ===== */
-.moderator-panel {
-  position: fixed;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  background: #020617;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  border-bottom: 1px solid #334155;
+  flex: 1;
   padding: 8px;
 }
